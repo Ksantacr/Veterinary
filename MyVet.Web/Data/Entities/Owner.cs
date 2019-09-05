@@ -29,15 +29,10 @@ namespace MyVet.Web.Data.Entities
         public string CellPhone { get; set; }
         [MaxLength(100, ErrorMessage = "The {0} field cannot have more than {1} characters.")]
         public string Address { get; set; }
-        //public string FullName
-        //{
-        //    get
-        //    {
-        //        return $"{FirstName} {LastName}";
-        //    }
-        //}
         [Display(Name = "Owner")]
         public string FullName => $"{FirstName} {LastName}";
         public string FullNameWithDocument => $"{FirstName} {LastName} - {Document}";
+        public ICollection<Pet> Pets { get; set; }
+        public ICollection<Agenda> Agendas { get; set; }
     }
 }
