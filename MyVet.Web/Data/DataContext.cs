@@ -1,13 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MyVet.Web.Data.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace MyVet.Web.Data
 {
-    public class DataContext : DbContext
+    public class DataContext : IdentityDbContext<User>
     {
         public DataContext(DbContextOptions<DataContext> options) : base(options)
         {
@@ -19,5 +16,7 @@ namespace MyVet.Web.Data
         public DbSet<Pet> Pets { get; set; }
         public DbSet<PetType> PetTypes { get; set; }
         public DbSet<ServiceType> ServiceTypes { get; set; }
+        public DbSet<Manager> Managers { get; set; }
+        
     }
 }

@@ -3,28 +3,62 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
+using MyVet.Web.Helpers;
 
 namespace MyVet.Web.Data
 {
     public class SeedDb
     {
         private readonly DataContext _context;
-        public SeedDb(DataContext context)
+        private readonly IUserHelper _userHelper;
+        public SeedDb(DataContext context, IUserHelper userHelper)
         {
             _context = context;
+            _userHelper = userHelper;
         }
 
         public async Task SeedAsync()
         {
             await _context.Database.EnsureCreatedAsync();
+            await CheckRoles();
+            var manager = await CheckUserAsync("1727327262", "Kevin", "Santacruz", "kevin@admin.com", "0981893287", "Calle Luna Calle Sol", "Admin");
+            var customer = await CheckUserAsync("1727327262001", "Kevin", "Santacruz", "kevin@customer.com", "227473", "Calle Luna Calle Sol", "Customer");
             await CheckPetTypesAsync();
             await CheckServiceTypesAsync();
-            await CheckOwnersAsync();
+            await CheckOwnerAsync(customer);
+            await CheckManagerAsync(manager);
             await CheckPetsAsync();
             await CheckAgendasAsync();
-
+        }
+        private async Task CheckRoles()
+        {
+            await _userHelper.CheckRoleAsync("Admin");
+            await _userHelper.CheckRoleAsync("Customer");
         }
 
+        private async Task<User> CheckUserAsync(string document, string firstName, string lastName, string email, string phone, string address, string role)
+        {
+            var user = await _userHelper.GetUserByEmailAsync(email);
+            if (user == null)
+            {
+                user = new User
+                {
+                    FirstName = firstName,
+                    LastName = lastName,
+                    Email = email,
+                    UserName = email,
+                    PhoneNumber = phone,
+                    Address = address,
+                    Document = document
+                };
+
+                await _userHelper.AddUserAsync(user, "123456");
+                await _userHelper.AddUserToRoleAsync(user, role);
+            }
+
+            return user;
+        }
         private async Task CheckPetTypesAsync()
         {
             if (!_context.PetTypes.Any())
@@ -34,7 +68,6 @@ namespace MyVet.Web.Data
                 await _context.SaveChangesAsync();
             }
         }
-
         private async Task CheckServiceTypesAsync()
         {
             if (!_context.ServiceTypes.Any())
@@ -46,19 +79,23 @@ namespace MyVet.Web.Data
             }
         }
 
-        
 
-        private async Task CheckOwnersAsync()
+        private async Task CheckOwnerAsync(User user)
         {
             if (!_context.Owners.Any())
             {
-                AddOwner("8989898", "Juan", "Zuluaga", "234 3232", "310 322 3221", "Calle Luna Calle Sol");
-                AddOwner("7655544", "Jose", "Cardona", "343 3226", "300 322 3221", "Calle 77 #22 21");
-                AddOwner("6565555", "Maria", "López", "450 4332", "350 322 3221", "Carrera 56 #22 21");
+                _context.Owners.Add(new Owner { User = user });
                 await _context.SaveChangesAsync();
             }
         }
-
+        private async Task CheckManagerAsync(User user)
+        {
+            if (!_context.Managers.Any())
+            {
+                _context.Managers.Add(new Manager { User = user });
+                await _context.SaveChangesAsync();
+            }
+        }
         private async Task CheckPetsAsync()
         {
             var owner = _context.Owners.FirstOrDefault();
@@ -70,7 +107,6 @@ namespace MyVet.Web.Data
                 await _context.SaveChangesAsync();
             }
         }
-        
 
         private async Task CheckAgendasAsync()
         {
@@ -104,19 +140,6 @@ namespace MyVet.Web.Data
 
                 await _context.SaveChangesAsync();
             }
-        }
-
-        private void AddOwner(string document, string firstName, string lastName, string fixedPhone, string cellPhone, string address)
-        {
-            _context.Owners.Add(new Owner
-            {
-                Address = address,
-                CellPhone = cellPhone,
-                Document = document,
-                FirstName = firstName,
-                FixedPhone = fixedPhone,
-                LastName = lastName
-            });
         }
 
         private void AddPet(string name, Owner owner, PetType petType, string race)
